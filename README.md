@@ -21,8 +21,4 @@ Hue Flow is a visually stimulating puzzle game where players arrange tiles into 
 - **CSS**: For styling the game elements and layout.
 - **JavaScript**: For implementing game logic and interactivity.
 
-## Live Demo
-You can play the game online via GitHub Pages:  
-[Hue Flow Game](https://gboute.github.io/HueFlowGame/)
-
 
