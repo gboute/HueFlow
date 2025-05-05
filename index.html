@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HueFlow</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #landing, #game {
+      text-align: center;
+    }
+    #level-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .level-btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #ccc;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .level-btn:hover {
+      background-color: #aaa;
+    }
+    .hidden {
+      display: none;
+    }
+    #grid {
+      display: grid;
+      gap: 0;
+      border: 2px solid #ccc;
+    }
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #666;
+      color: white;
+      font-weight: bold;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+    .tile:active {
+      transform: scale(0.95);
+    }
+    .anchor {
+      border: 2px solid black !important;
+      cursor: default !important;
+    }
+    #back {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 15px;
+      background-color: #888;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #test-instruction {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <p id="test-instruction" class="hidden">Arrange the tiles in order from 1 to 16.</p>
+  <div id="landing">
+    <h1>Welcome to HueFlow</h1>
+    <p>Immerse yourself in the soothing world of color gradients. Select a level to begin:</p>
+    <div id="level-select">
+      <button class="level-btn" data-level="1">Level 1</button>
+      <button class="level-btn" data-level="2">Level 2</button>
+      <button class="level-btn" data-level="3">Level 3</button>
+      <button class="level-btn" data-level="4">Level 4</button>
+      <button class="level-btn" data-level="5">Level 5</button>
+      <button class="level-btn" data-level="test">Test Level</button>
+    </div>
+  </div>
+  <div id="game" class="hidden">
+    <button id="back">&larr; Back</button>
+    <h2 id="level-title"></h2>
+    <div id="grid"></div>
+    <p id="message"></p>
+  </div>
+  <script>
+    const levelButtons = document.querySelectorAll('.level-btn');
+    const landing = document.getElementById('landing');
+    const game = document.getElementById('game');
+    const levelTitle = document.getElementById('level-title');
+    const grid = document.getElementById('grid');
+    const backBtn = document.getElementById('back');
+    const message = document.getElementById('message');
+    const instruction = document.getElementById('test-instruction');
+
+    const levels = {
+      1: generateGradient(4),
+      2: generateGradient(5),
+      3: generateGradient(6),
+      4: generateGradient(7),
+      5: generateGradient(8),
+      test: Array.from({ length: 16 }, (_, i) => i + 1)
+    };
+
+    let solution = [];
+    let currentTiles = [];
+    let anchors = [];
+    let selectedIndex = null;
+    let currentLevel = null;
+
+    function generateGradient(size) {
+      const total = size * size;
+      const gradient = [];
+      for (let i = 0; i < total; i++) {
+        const hue = Math.floor((i / total) * 360);
+        gradient.push(`hsl(${hue}, 80%, 60%)`);
+      }
+      return gradient;
+    }
+
+    function getAnchorIndices(size) {
+      return [0, size - 1, size * (size - 1), size * size - 1];
+    }
+
+    function updateGridSize(size) {
+      grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+      const tileSize = Math.floor(240 / size);
+      const style = document.createElement('style');
+      style.innerHTML = `.tile { width: ${tileSize}px; height: ${tileSize}px; }`;
+      document.head.appendChild(style);
+    }
+
+    levelButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const level = button.dataset.level;
+        currentLevel = level;
+        landing.classList.add('hidden');
+        game.classList.remove('hidden');
+        levelTitle.textContent = `Level ${level}`;
+        solution = [...levels[level]];
+        const size = Math.sqrt(solution.length);
+        anchors = getAnchorIndices(size);
+        updateGridSize(size);
+        currentTiles = shuffleWithAnchors(solution);
+        renderGrid(currentTiles);
+      });
+    });
+
+    backBtn.addEventListener('click', () => {
+      game.classList.add('hidden');
+      landing.classList.remove('hidden');
+      grid.innerHTML = '';
+      message.textContent = '';
+      selectedIndex = null;
+    });
+
+    function handleTileClick(index) {
+      if (selectedIndex === null) {
+        selectedIndex = index;
+        grid.children[index].style.outline = '2px solid black';
+      } else {
+        handleTileSwap(selectedIndex, index);
+        selectedIndex = null;
+      }
+    }
+
+    function handleTileSwap(i, j) {
+      if (!anchors.includes(i) && !anchors.includes(j)) {
+        [currentTiles[i], currentTiles[j]] = [currentTiles[j], currentTiles[i]];
+        renderGrid(currentTiles);
+        checkWin();
+      }
+    }
+
+    function checkWin() {
+      const won = currentTiles.every((val, i) => val === solution[i]);
+      message.textContent = won ? '🎉 Puzzle Solved!' : '';
+    }
+
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+    function shuffleWithAnchors(array) {
+      let movable = array.filter((_, i) => !anchors.includes(i));
+      let shuffled = shuffle([...movable]);
+      return array.map((val, i) => anchors.includes(i) ? val : shuffled.shift());
+    }
+
+    function renderGrid(tiles) {
+      grid.innerHTML = '';
+      instruction.classList.toggle('hidden', currentLevel !== 'test');
+      tiles.forEach((tileVal, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+
+        if (currentLevel === 'test') {
+          tile.textContent = tileVal;
+          tile.style.backgroundColor = '#666';
+        } else {
+          tile.style.backgroundColor = tileVal;
+          tile.textContent = '';
+        }
+
+        tile.setAttribute('draggable', !anchors.includes(index));
+        if (anchors.includes(index)) {
+          tile.classList.add('anchor');
+        } else {
+          tile.addEventListener('click', () => handleTileClick(index));
+          tile.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', index));
+          tile.addEventListener('dragover', (e) => e.preventDefault());
+          tile.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            handleTileSwap(fromIndex, index);
+          });
+        }
+        grid.appendChild(tile);
+      });
+    }
+  </script>
+</body>
+</html>
