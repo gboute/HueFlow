@@ -1,0 +1,101 @@
+
+@font-face {
+  font-family: 'KiwiSoda';
+  src: url('KiwiSoda.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'KiwiSoda', sans-serif;
+}
+
+#landing, #game {
+  text-align: center;
+  font-size: 1.4rem;
+}
+
+#level-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.level-btn {
+  font-family: 'KiwiSoda', sans-serif;
+  padding: 10px 20px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  background-color: #ccc;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.level-btn:hover {
+  background-color: #aaa;
+}
+
+.hidden {
+  display: none;
+}
+
+#grid {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0 auto;
+  width: 240px; /* adjust this for responsiveness */
+  height: 240px;
+}
+
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #666;
+  color: white;
+  font-weight: bold;
+  user-select: none;
+  transition: transform 0.3s ease;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: 1.4rem;
+}
+
+.tile.selected {
+  transform: scale(1.03);
+  z-index: 2;
+}
+
+
+.anchor {
+  cursor: not-allowed !important;
+}
+
+#back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 15px;
+  background-color: #888;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#test-instruction {
+  font-size: 1.2rem;
+  color: #444;
+}

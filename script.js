@@ -1,128 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HueFlow</title>
-  <style>
-    @font-face {
-      font-family: 'KiwiSoda';
-      src: url('KiwiSoda.woff2') format('woff2');
-      font-weight: normal;
-      font-style: normal;
-    }
-
-    body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  font-family: 'KiwiSoda', sans-serif;
-   }
-
-    #landing, #game {
-  text-align: center;
-  font-family: 'KiwiSoda', sans-serif;
-  font-size: 1.4rem;
-    }
-
-    #level-select {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 20px;
-    }
-
-    .level-btn {
-  font-family: 'KiwiSoda', sans-serif;
-      padding: 10px 20px;
-      font-size: 1.4rem;
-      cursor: pointer;
-      background-color: #ccc;
-      border: none;
-      border-radius: 5px;
-      transition: background-color 0.3s;
-    }
-
-    .level-btn:hover {
-      background-color: #aaa;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #grid {
-  display: grid;
-  width: 240px;
-  gap: 0;
-  padding: 0;
-  margin: 0 auto;
+function getURLLevel() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("level");
 }
 
-    .tile {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #666;
-      color: white;
-      font-weight: bold;
-      user-select: none;
-      transition: transform 0.3s ease;
-      box-sizing: border-box;
-      margin: 0;
-      border: none;
-      font-size: 1.4rem;
-    }
+window.addEventListener("DOMContentLoaded", () => {
+  const level = getURLLevel();
+  if (!level) return;
 
-    .anchor {
-      cursor: not-allowed !important;
-    }
+  currentLevel = level;
+  document.getElementById('landing')?.classList.add('hidden');
+  document.getElementById('game')?.classList.remove('hidden');
+  levelTitle.textContent = `Level ${level}`;
+  solution = [...levels[level]];
+  const size = Math.sqrt(solution.length);
+  anchors = getAnchorIndices(size);
+  updateGridSize(size);
+  currentTiles = shuffleWithAnchors(solution);
+  renderGrid(currentTiles);
+});
 
-    #back {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 10px 15px;
-      background-color: #888;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
 
-    #test-instruction {
-      font-size: 1.2rem;
-      color: #444;
-    }
-  </style>
-</head>
-<body>
-<!-- (rest of document continues unchanged) -->
-    <p id="test-instruction" class="hidden">Arrange the tiles in order from 1 to 16.</p>
-  <div id="landing">
-    <h1>Welcome to HueFlow</h1>
-    <p>Immerse yourself in the soothing world of color gradients.</p>
-    <p>Select a level to begin:</p>
-    <div id="level-select">
-      <button class="level-btn" data-level="1">Level 1</button>
-      <button class="level-btn" data-level="2">Level 2</button>
-      <button class="level-btn" data-level="3">Level 3</button>
-      <button class="level-btn" data-level="4">Level 4</button>
-      <button class="level-btn" data-level="5">Level 5</button>
-      <button class="level-btn" data-level="test">Test Level</button>
-    </div>
-  </div>
-  <div id="game" class="hidden">
-    <button id="back">&larr; Back</button>
-    <h2 id="level-title"></h2>
-    <div id="grid"></div>
-    <p id="message"></p>
-  </div>
-  <script>
-    const levelButtons = document.querySelectorAll('.level-btn');
+const levelButtons = document.querySelectorAll('.level-btn');
     const landing = document.getElementById('landing');
     const game = document.getElementById('game');
     const levelTitle = document.getElementById('level-title');
@@ -191,13 +89,10 @@
     }
 
     function updateGridSize(size) {
-      grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-      grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
-      const tileSize = Math.floor(240 / size);
-      const style = document.createElement('style');
-      style.innerHTML = `.tile { width: ${tileSize}px; height: ${tileSize}px; }`;
-      document.head.appendChild(style);
-    }
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+}
+
 
     function shuffle(array) {
       let currentIndex = array.length, randomIndex;
@@ -253,9 +148,9 @@
     function handleTileClick(index) {
       if (selectedIndex === null) {
         selectedIndex = index;
-        grid.children[index].style.outline = '2px solid black';
+        grid.children[index].classList.add('selected');
       } else {
-        grid.children[selectedIndex].style.outline = '';
+        grid.children[selectedIndex].classList.remove('selected');
         handleTileSwap(selectedIndex, index);
         selectedIndex = null;
       }
@@ -316,6 +211,3 @@
       message.textContent = '';
       selectedIndex = null;
     });
-  </script>
-</body>
-</html>
