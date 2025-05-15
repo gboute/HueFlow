@@ -67,7 +67,7 @@
     }
 
     .anchor {
-      cursor: default !important;
+      cursor: not-allowed !important;
     }
 
     #back {
@@ -251,18 +251,19 @@
         const tile = document.createElement('div');
         tile.className = 'tile';
 
-        if (currentLevel === 'test') {
-          tile.textContent = tileVal;
-          tile.style.backgroundColor = '#666';
-        } else {
-          tile.style.backgroundColor = tileVal;
-          tile.textContent = '';
-        }
-
-        tile.setAttribute('draggable', !anchors.includes(index));
+        // Anchor tile block — CHOOSE A or B:
         if (anchors.includes(index)) {
           tile.classList.add('anchor');
+          tile.textContent = '✿';
+          tile.style.fontSize = '1.25rem';
+          // VERSION B ONLY: keep gradient background
+          if (currentLevel !== 'test') {
+            tile.style.backgroundColor = tileVal;
+          }
         } else {
+          tile.textContent = currentLevel === 'test' ? tileVal : '';
+          tile.style.backgroundColor = currentLevel === 'test' ? '#666' : tileVal;
+          tile.setAttribute('draggable', true);
           tile.addEventListener('click', () => handleTileClick(index));
           tile.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', index));
           tile.addEventListener('dragover', (e) => e.preventDefault());
@@ -272,6 +273,7 @@
             handleTileSwap(fromIndex, index);
           });
         }
+
         grid.appendChild(tile);
       });
     }
