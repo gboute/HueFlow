@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HueFlow</title>
   <style>
+    @font-face {
+      font-family: 'KiwiSoda';
+      src: url('KiwiSoda.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+
     body {
-      font-family: 'Arial', sans-serif;
+      font-family: 'KiwiSoda', sans-serif;
       background-color: #f4f4f4;
       margin: 0;
       padding: 0;
@@ -64,6 +71,7 @@
       box-sizing: border-box;
       margin: 0;
       border: none;
+      font-size: 1rem;
     }
 
     .anchor {
@@ -119,13 +127,53 @@
     const message = document.getElementById('message');
     const instruction = document.getElementById('test-instruction');
 
+    function generateGradient(size) {
+      const anchors = {
+        tl: [255, 0, 0],
+        tr: [255, 255, 0],
+        bl: [0, 0, 255],
+        br: [255, 0, 255]
+      };
+
+      const gradient = [];
+
+      for (let row = 0; row < size; row++) {
+        const y = row / (size - 1);
+        for (let col = 0; col < size; col++) {
+          const x = col / (size - 1);
+
+          const top = [
+            (1 - x) * anchors.tl[0] + x * anchors.tr[0],
+            (1 - x) * anchors.tl[1] + x * anchors.tr[1],
+            (1 - x) * anchors.tl[2] + x * anchors.tr[2]
+          ];
+          const bottom = [
+            (1 - x) * anchors.bl[0] + x * anchors.br[0],
+            (1 - x) * anchors.bl[1] + x * anchors.br[1],
+            (1 - x) * anchors.bl[2] + x * anchors.br[2]
+          ];
+          const rgb = [
+            Math.round((1 - y) * top[0] + y * bottom[0]),
+            Math.round((1 - y) * top[1] + y * bottom[1]),
+            Math.round((1 - y) * top[2] + y * bottom[2])
+          ];
+
+          const color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+          const index = row * size + col;
+          gradient.push({ color, label: index + 1 });
+        }
+      }
+
+      return gradient;
+    }
+
     const levels = {
       1: generateGradient(4),
       2: generateGradient(5),
       3: generateGradient(6),
       4: generateGradient(7),
       5: generateGradient(8),
-      test: Array.from({ length: 16 }, (_, i) => i + 1)
+      test: generateGradient(4)
     };
 
     let solution = [];
@@ -133,16 +181,6 @@
     let anchors = [];
     let selectedIndex = null;
     let currentLevel = null;
-
-    function generateGradient(size) {
-      const total = size * size;
-      const gradient = [];
-      for (let i = 0; i < total; i++) {
-        const hue = Math.floor((i / total) * 360);
-        gradient.push(`hsl(${hue}, 80%, 60%)`);
-      }
-      return gradient;
-    }
 
     function getAnchorIndices(size) {
       return [0, size - 1, size * (size - 1), size * size - 1];
@@ -155,6 +193,100 @@
       const style = document.createElement('style');
       style.innerHTML = `.tile { width: ${tileSize}px; height: ${tileSize}px; }`;
       document.head.appendChild(style);
+    }
+
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+    function shuffleWithAnchors(array) {
+      let movable = array.filter((_, i) => !anchors.includes(i));
+      let shuffled = shuffle([...movable]);
+      return array.map((val, i) => anchors.includes(i) ? val : shuffled.shift());
+    }
+
+    function renderGrid(tiles) {
+      grid.innerHTML = '';
+      instruction.classList.toggle('hidden', currentLevel !== 'test');
+      tiles.forEach((tileData, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        const color = tileData.color || tileData;
+        tile.style.backgroundColor = color;
+
+        if (anchors.includes(index)) {
+          tile.classList.add('anchor');
+          tile.textContent = '✿';
+          tile.style.fontSize = '1.5rem';
+        } else {
+          tile.setAttribute('draggable', true);
+          tile.addEventListener('click', () => handleTileClick(index));
+          tile.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', index));
+          tile.addEventListener('dragover', (e) => e.preventDefault());
+          tile.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            handleTileSwap(fromIndex, index);
+          });
+
+          if (currentLevel === 'test') {
+            tile.textContent = tileData.label;
+            tile.style.color = 'white';
+            tile.style.fontWeight = 'bold';
+          }
+        }
+
+        grid.appendChild(tile);
+      });
+    }
+
+    function handleTileClick(index) {
+      if (selectedIndex === null) {
+        selectedIndex = index;
+        grid.children[index].style.outline = '2px solid black';
+      } else {
+        grid.children[selectedIndex].style.outline = '';
+        handleTileSwap(selectedIndex, index);
+        selectedIndex = null;
+      }
+    }
+
+    function handleTileSwap(i, j) {
+      if (!anchors.includes(i) && !anchors.includes(j)) {
+        const tiles = Array.from(grid.children);
+        const tileA = tiles[i];
+        const tileB = tiles[j];
+        const rectA = tileA.getBoundingClientRect();
+        const rectB = tileB.getBoundingClientRect();
+        const dx = rectB.left - rectA.left;
+        const dy = rectB.top - rectA.top;
+        tileA.style.transform = `translate(${dx}px, ${dy}px)`;
+        tileB.style.transform = `translate(${-dx}px, ${-dy}px)`;
+        tileA.style.zIndex = 1;
+        tileB.style.zIndex = 1;
+        setTimeout(() => {
+          tileA.style.transition = 'none';
+          tileB.style.transition = 'none';
+          tileA.style.transform = '';
+          tileB.style.transform = '';
+          tileA.style.zIndex = '';
+          tileB.style.zIndex = '';
+          [currentTiles[i], currentTiles[j]] = [currentTiles[j], currentTiles[i]];
+          renderGrid(currentTiles);
+          checkWin();
+        }, 300);
+      }
+    }
+
+    function checkWin() {
+      const won = currentTiles.every((val, i) => val.color === solution[i].color);
+      message.textContent = won ? '🎉 Puzzle Solved!' : '';
     }
 
     levelButtons.forEach(button => {
@@ -180,103 +312,6 @@
       message.textContent = '';
       selectedIndex = null;
     });
-
-    function handleTileClick(index) {
-      if (selectedIndex === null) {
-        selectedIndex = index;
-        grid.children[index].style.outline = '2px solid black';
-      } else {
-        grid.children[selectedIndex].style.outline = '';
-        handleTileSwap(selectedIndex, index);
-        selectedIndex = null;
-      }
-    }
-
-    function handleTileSwap(i, j) {
-      if (!anchors.includes(i) && !anchors.includes(j)) {
-        const tiles = Array.from(grid.children);
-        const tileA = tiles[i];
-        const tileB = tiles[j];
-
-        const rectA = tileA.getBoundingClientRect();
-        const rectB = tileB.getBoundingClientRect();
-        const dx = rectB.left - rectA.left;
-        const dy = rectB.top - rectA.top;
-
-        tileA.style.transform = `translate(${dx}px, ${dy}px)`;
-        tileB.style.transform = `translate(${-dx}px, ${-dy}px)`;
-
-        tileA.style.zIndex = 1;
-        tileB.style.zIndex = 1;
-
-        setTimeout(() => {
-          tileA.style.transition = 'none';
-          tileB.style.transition = 'none';
-          tileA.style.transform = '';
-          tileB.style.transform = '';
-          tileA.style.zIndex = '';
-          tileB.style.zIndex = '';
-          [currentTiles[i], currentTiles[j]] = [currentTiles[j], currentTiles[i]];
-          renderGrid(currentTiles);
-          checkWin();
-        }, 300);
-      }
-    }
-
-    function checkWin() {
-      const won = currentTiles.every((val, i) => val === solution[i]);
-      message.textContent = won ? '🎉 Puzzle Solved!' : '';
-    }
-
-    function shuffle(array) {
-      let currentIndex = array.length, randomIndex;
-      while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-      }
-      return array;
-    }
-
-    function shuffleWithAnchors(array) {
-      let movable = array.filter((_, i) => !anchors.includes(i));
-      let shuffled = shuffle([...movable]);
-      return array.map((val, i) => anchors.includes(i) ? val : shuffled.shift());
-    }
-
-    function renderGrid(tiles) {
-      grid.innerHTML = '';
-      instruction.classList.toggle('hidden', currentLevel !== 'test');
-      tiles.forEach((tileVal, index) => {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-
-        // Anchor tile block — CHOOSE A or B:
-        if (anchors.includes(index)) {
-          tile.classList.add('anchor');
-          tile.textContent = '✿';
-          tile.style.fontSize = '1.25rem';
-          // VERSION B ONLY: keep gradient background
-          if (currentLevel !== 'test') {
-            tile.style.backgroundColor = tileVal;
-          }
-        } else {
-          tile.textContent = currentLevel === 'test' ? tileVal : '';
-          tile.style.backgroundColor = currentLevel === 'test' ? '#666' : tileVal;
-          tile.setAttribute('draggable', true);
-          tile.addEventListener('click', () => handleTileClick(index));
-          tile.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', index));
-          tile.addEventListener('dragover', (e) => e.preventDefault());
-          tile.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-            handleTileSwap(fromIndex, index);
-          });
-        }
-
-        grid.appendChild(tile);
-      });
-    }
   </script>
 </body>
 </html>
