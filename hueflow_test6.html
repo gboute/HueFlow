@@ -13,19 +13,18 @@
     }
 
     body {
-      font-family: 'KiwiSoda', sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'KiwiSoda', sans-serif;
+   }
 
     #landing, #game {
-      text-align: center;
+  text-align: center;
+  font-family: 'KiwiSoda', sans-serif;
+  font-size: 1.4rem;
     }
 
     #level-select {
@@ -37,8 +36,9 @@
     }
 
     .level-btn {
+  font-family: 'KiwiSoda', sans-serif;
       padding: 10px 20px;
-      font-size: 1rem;
+      font-size: 1.4rem;
       cursor: pointer;
       background-color: #ccc;
       border: none;
@@ -55,9 +55,12 @@
     }
 
     #grid {
-      display: grid;
-      gap: 0;
-    }
+  display: grid;
+  width: 240px;
+  gap: 0;
+  padding: 0;
+  margin: 0 auto;
+}
 
     .tile {
       display: flex;
@@ -71,7 +74,7 @@
       box-sizing: border-box;
       margin: 0;
       border: none;
-      font-size: 1rem;
+      font-size: 1.4rem;
     }
 
     .anchor {
@@ -91,17 +94,18 @@
     }
 
     #test-instruction {
-      margin-top: 10px;
-      font-size: 0.9rem;
+      font-size: 1.2rem;
       color: #444;
     }
   </style>
 </head>
 <body>
-  <p id="test-instruction" class="hidden">Arrange the tiles in order from 1 to 16.</p>
+<!-- (rest of document continues unchanged) -->
+    <p id="test-instruction" class="hidden">Arrange the tiles in order from 1 to 16.</p>
   <div id="landing">
     <h1>Welcome to HueFlow</h1>
-    <p>Immerse yourself in the soothing world of color gradients. Select a level to begin:</p>
+    <p>Immerse yourself in the soothing world of color gradients.</p>
+    <p>Select a level to begin:</p>
     <div id="level-select">
       <button class="level-btn" data-level="1">Level 1</button>
       <button class="level-btn" data-level="2">Level 2</button>
